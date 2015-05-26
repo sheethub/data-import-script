@@ -248,6 +248,7 @@ class Updater
                 'fetched_time' => date('c', time()),
                 'period' => $config['period'] == 86400 ? '每日' : '每分鐘',
                 'source' => 'http://www.dot.gov.taipei/',
+                'update_code' => 'https://github.com/sheethub/data-import-script/blob/master/5284.taipei.gov.tw/update.php',
             ));
         }
     }
