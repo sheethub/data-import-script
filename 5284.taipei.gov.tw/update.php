@@ -1,9 +1,20 @@
 <?php
 
-// usage: env SHEETHUB_KEY={key} update.php
-
+/**
+ * usage: env SHEETHUB_KEY={key} update.php
+ * 5284 文件: http://www.dot.gov.taipei/public/mmo/dot/%E6%88%91%E6%84%9B%E5%B7%B4%E5%A3%AB5284%E8%B3%87%E6%96%99%E5%BA%AB%E4%BB%8B%E6%8E%A5%E8%AA%AA%E6%98%8E%E6%96%87%E4%BB%B6.pdf
+ * SheetHub API 文件: https://hackpad.com/SheetHub.com-API-Public-gtQm8vtBXLH
+ *
+ */
 class Updater
 {
+    /**
+     * 從 5284 API 取得某一個 API 資料
+     * 
+     * @param mixed $type 
+     * @access public
+     * @return array($fp, 版本時間)
+     */
     public function getFileFrom5284($type)
     {
         $bus_domain = getenv('BUS5284_DOMAIN') ?: 'imp.5284.com.tw';
@@ -24,6 +35,13 @@ class Updater
         return array($fp, $matches[1]);;
     }
 
+    /**
+     * 將 $fp 上傳到 SheetHub 取得 $upload_id 待下一步
+     * 
+     * @param mixed $fp 
+     * @access public
+     * @return string $upload_id
+     */
     public function uploadToSheetHub($fp)
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
@@ -44,6 +62,13 @@ class Updater
         return $upload_id;
     }
 
+    /**
+     * 從已上傳的 $upload_id 取得經過 SheetHub 解析的資訊
+     * 
+     * @param mixed $upload_id 
+     * @access public
+     * @return Obj
+     */
     public function getFileInfoFromUpload($upload_id)
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
@@ -61,6 +86,14 @@ class Updater
         return $ret->data;
     }
 
+    /**
+     * 只檢查有什麼內容有修改，不變更線上內容
+     * 
+     * @param string $type 
+     * @param string $upload_id 
+     * @access public
+     * @return Obj
+     */
     public function checkUpload($type, $upload_id)
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
@@ -89,6 +122,14 @@ class Updater
         return $ret->data;
     }
 
+    /**
+     * 用 $upload_id 的內容覆蓋 SheetHub 線上的內容，採用 update_type=1, 當新檔案沒有的東西在 SheetHub 上也會刪除
+     * 
+     * @param string $type 
+     * @param string $upload_id 
+     * @access public
+     * @return Object result 
+     */
     public function updateFile($type, $upload_id)
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
@@ -117,6 +158,14 @@ class Updater
         return $ret->data;
     }
 
+    /**
+     * 修改 SheetHub 上的 meta data
+     * 
+     * @param string $type 
+     * @param array $values 
+     * @access public
+     * @return OBj
+     */
     public function setMeta($type, $values)
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
@@ -133,6 +182,13 @@ class Updater
         return $ret->data;
     }
 
+    /**
+     * 取得 $type 這個 Sheet 的資訊
+     * 
+     * @param string $type 
+     * @access public
+     * @return Object
+     */
     public function getSheetHubInfo($type)
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
@@ -190,6 +246,8 @@ class Updater
             $this->setMeta($type, array(
                 'updated_time' => $updatetime,
                 'fetched_time' => date('c', time()),
+                'period' => $config['period'] == 86400 ? '每日' : '每分鐘',
+                'source' => 'http://www.dot.gov.taipei/',
             ));
         }
     }
