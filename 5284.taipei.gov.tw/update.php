@@ -146,6 +146,7 @@ class Updater
         $params[] = 'tab-select=BusInfo';
         $params[] = 'row_begin=1';
         $params[] = 'update_type=1';
+        $params[] = 'clean_uploaded_file=1';
         $params[] = 'cols=' . urlencode(json_encode($columns));
         $curl = curl_init("https://{$sheethub_domain}/5284.taipei.gov.tw/{$type}/updatefile?access_token={$sheethub_key}");
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
