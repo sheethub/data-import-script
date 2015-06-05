@@ -150,6 +150,7 @@ class Updater
         $params[] = 'cols=' . urlencode(json_encode($columns));
         $curl = curl_init("https://{$sheethub_domain}/5284.taipei.gov.tw/{$type}/updatefile?access_token={$sheethub_key}");
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 30);
         curl_setopt($curl, CURLOPT_POSTFIELDS, implode('&', $params));
         $content = curl_exec($curl);
         $ret = json_decode($content);
