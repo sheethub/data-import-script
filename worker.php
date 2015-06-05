@@ -18,4 +18,5 @@ while (true) {
 
         system("php " . $config['script']);
     }
+    usleep(1000);
 }
