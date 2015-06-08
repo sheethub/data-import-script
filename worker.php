@@ -4,6 +4,9 @@ $jobs = array(
     '5284.taipei.gov.tw' => array(
         'script' => '5284.taipei.gov.tw/update.php',
     ),
+    'opendata.cwb.gov.tw' => array(
+        'script' => 'opendata.cwb.gov.tw/update.php',
+    ),
 );
 
 putenv('SCRIPT_TIMEOUT=120');
