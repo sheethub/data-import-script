@@ -3,12 +3,21 @@
 
 class CWB
 {
+    public static function getBody($url)
+    {
+        $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $content = curl_exec($curl);
+        curl_close($curl);
+        return $content;
+    }
+
     protected static $_stops = null;
     public static function getStops()
     {
         if (is_null(self::$_stops)) {
             $doc = new DOMDocument;
-            $doc->loadHtml("<html><table></table>" . file_get_contents("http://www.cwb.gov.tw/V7/climate/30day/30day.php"). "</html>");
+            $doc->loadHtml("<html><table></table>" . self::getBody("http://www.cwb.gov.tw/V7/climate/30day/30day.php"). "</html>");
             self::$_stops = array();
             foreach ($doc->getElementById('st')->getElementsByTagName('option') as $option_dom) {
                 self::$_stops[$option_dom->getAttribute('value')] = $option_dom->nodeValue;
@@ -24,7 +33,7 @@ class CWB
         $doc = new DOMDocument;
         error_log("{$stop_id} {$stop_name} {$time}");
         $url = "http://www.cwb.gov.tw/V7/climate/30day/Data/{$stop_id}_{$time}.htm";
-        $doc->loadHtml(file_get_contents($url));
+        $doc->loadHtml(self::getBody($url));
         $table_dom = $doc->getElementsByTagName('table')->item(1);
         $tr_doms = $table_dom->getElementsByTagName('tr');
 
@@ -48,7 +57,7 @@ class CWB
     public function getAll15mInfo()
     {
         $doc = new DOMDocument;
-        $doc->loadHtml("<html><table></table>" . file_get_contents("http://www.cwb.gov.tw/V7/observe/real/ALL.htm?_=". time()). "</html>");
+        $doc->loadHtml("<html><table></table>" . self::getBody("http://www.cwb.gov.tw/V7/observe/real/ALL.htm?_=". time()). "</html>");
         $table_dom = $doc->getElementsByTagName('table')->item(1);
         if (!$table_dom) { 
             throw new Exception('table not found');
@@ -77,7 +86,7 @@ class CWB
     public function getLatest24hr15mInfo($stop_id)
     {
         $doc = new DOMDocument;
-        $doc->loadHtml("<html><table></table>" . file_get_contents("http://www.cwb.gov.tw/V7/observe/24real/Data/{$stop_id}.htm?_=". time()). "</html>");
+        $doc->loadHtml("<html><table></table>" . self::getBody("http://www.cwb.gov.tw/V7/observe/24real/Data/{$stop_id}.htm?_=". time()). "</html>");
         $table_dom = $doc->getElementsByTagName('table')->item(1);
         if (!$table_dom) { 
             throw new Exception('table not found');
