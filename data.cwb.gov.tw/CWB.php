@@ -7,7 +7,12 @@ class CWB
     {
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
         $content = curl_exec($curl);
+        $info = curl_getinfo($curl);
+        if ($info['http_code'] !== 200) {
+            throw new Exception("fetch {$url} got {$info['http_code']}");
+        }
         curl_close($curl);
         return $content;
     }
