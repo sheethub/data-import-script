@@ -316,7 +316,7 @@ class DataGovTw
             SheetHubTool::setDescription('data.gov.tw', $type, $portal_meta['資料集描述']);
         }
 
-        return "更新成功";
+        return "更新成功，已匯入 https://sheethub.com/data.gov.tw/{$type}";
     }
 
     protected $_error_throw_exception = false;
