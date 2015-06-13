@@ -283,6 +283,7 @@ class DataGovTw
                 $upload_id = SheetHubTool::uploadToSheetHub($fp, $filetype);
                 if ($sheet_info) {
                     $ret = SheetHubTool::updateFile('data.gov.tw', $type, $upload_id, $config);
+                    $result = " insert: " . count($ret->insert) . ', update: ' . count($ret->update) . ', delete: ' . count($ret->delete);
                     error_log("Type={$type} done, insert: " . count($ret->insert) . ', update: ' . count($ret->update) . ', delete: ' . count($ret->delete));
                     $this->updateStatus($type, date('c', time()), sprintf("更新完成，共新增 %d 筆，更新 %d 筆，刪除 %d 筆", count($ret->insert), count($ret->update), count($ret->delete)));
                 } else {
@@ -316,7 +317,7 @@ class DataGovTw
             SheetHubTool::setDescription('data.gov.tw', $type, $portal_meta['資料集描述']);
         }
 
-        return "更新成功，已匯入 https://sheethub.com/data.gov.tw/{$type}";
+        return "更新成功，已匯入 https://sheethub.com/data.gov.tw/{$type} , {$result}";
     }
 
     protected $_error_throw_exception = false;
