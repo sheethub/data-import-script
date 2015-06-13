@@ -1,5 +1,7 @@
 <?php
 
+include('SheetHubTool.php');
+
 /**
  * usage: env SHEETHUB_KEY={key} update.php
  * SheetHub API 文件: https://hackpad.com/SheetHub.com-API-Public-gtQm8vtBXLH
@@ -195,7 +197,7 @@ class DataGovTw
             }
             $config['period'] = array_key_exists('period', $config) ? $config['period'] : 86400;
             if (time() - strtotime($sheet_info->meta->fetched_time) < $config['period']) {
-                return;
+                return "距離上次更新時間過短";
             }
             error_log("updating {$type}");
         } catch (Exception $e) {
@@ -214,7 +216,7 @@ class DataGovTw
             $portal_meta = $this->getMetaFromPortal($config['source']);
         } catch (Exception $e) {
             $this->error($type, $e);
-            return;
+            return "更新失敗，原因: " . $e->getMessage();
         }
 
         if (!$config['meta_only']) {
@@ -249,12 +251,11 @@ class DataGovTw
             }
 
             if (is_null($download_url)) {
-                var_dump($portal_meta['下載']);
                 try {
                     throw new Exception("超過一個檔可以下載，不知道要用哪個: " . implode(',', array_map(function($i) {return $i['type']; }, $portal_meta['下載'])));
                 } catch (Exception $e) {
                     $this->error($type, $e);
-                    return;
+                    return "更新失敗，原因: " . $e->getMessage();
                 }
             }
 
@@ -264,14 +265,14 @@ class DataGovTw
                 error_log("downloaded");
             }catch (Exception $e) {
                 $this->error($type, $e);
-                return;
+                return "更新失敗，原因: " . $e->getMessage();
             }
             $file = stream_get_meta_data($fp)['uri'];
             $md5 = md5_file($file);
             if ($sheet_info and $sheet_info->meta->file_hash and $md5 == $sheet_info->meta->file_hash) {
                 error_log("md5 same, skip {$type}");
                 SheetHubTool::setMeta('data.gov.tw', $type, array('fetched_time' => date('c', time())));
-                return;
+                return "下載原始檔案 md5 未變，不需更新";
             }
 
             if ($config['filetype']) {
@@ -291,7 +292,7 @@ class DataGovTw
                 }
             } catch (Exception $e) {
                 $this->error($type, $e);
-                return;
+                return "更新失敗，原因: " . $e->getMessage();
             }
         }
         $new_meta = $sheet_info->meta;
@@ -314,12 +315,25 @@ class DataGovTw
         if ($portal_meta['資料集描述'] and $portal_meta['資料集描述'] != $sheet_info->description) {
             SheetHubTool::setDescription('data.gov.tw', $type, $portal_meta['資料集描述']);
         }
+
+        return "更新成功";
+    }
+
+    protected $_error_throw_exception = false;
+
+    public function setErrorThrowException($v)
+    {
+        $this->_error_throw_exception = true;
     }
 
     public function error($type, $e) 
     {
+        if ($this->_error_throw_exception) {
+            throw $e;
+        }
         file_put_contents('error', $type . ": {$e->getMessage()}\n", FILE_APPEND);
         error_log("{$type}: {$e->getMessage()}");
         //throw $e;
     }
+
 }
