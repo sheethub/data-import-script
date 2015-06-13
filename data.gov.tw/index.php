@@ -15,7 +15,7 @@ if ($_POST['url']) {
 
     try {
         $portal_meta = $d->getMetaFromPortal($_POST['url']);
-        $config = array('source' => $_POST['url']);
+        $config = array('source' => $_POST['url'], 'period' => 0);
         $m = $d->updateOrInsert(str_replace('/', '_', $portal_meta['title']), $config);
     } catch (Exception $e) {
         error("匯入失敗，原因: " . $e->getMessage());
