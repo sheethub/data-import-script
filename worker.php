@@ -17,7 +17,7 @@ while (true) {
         if (array_key_exists('prev_time', $config) and $now - $config['prev_time'] < 60) {
             continue;
         }
-        $config['prev_time'] = $now;
+        $jobs[$id]['prev_time'] = $now;
 
         system("php " . $config['script']);
     }
