@@ -23,6 +23,11 @@ $used = array('1984' => array(), '2010' => array(), '2014' => array());
 $columns = fgetcsv($input);
 while ($rows = fgetcsv($input)) {
     $values = array_combine($columns, $rows);
+    foreach (array('COUNTYID', 'SEGIS_COUNTY_ID') as $k) {
+        if ($values[$k][0] == '9') {
+            $values[$k] = '0' . $values[$k];
+        }
+    }
     fputcsv($fp, array(
         $values['COUNTYID'],
         $values['COUNTYID'],
@@ -57,10 +62,18 @@ while ($rows = fgetcsv($input)) {
 
 $input = fopen('town.csv', 'r');
 $columns = fgetcsv($input);
+$fp_town_out = fopen('map-town.csv', 'w');
+$town_map = array();
+fputcsv($fp_town_out, array('county_dgbas_id', 'name', 'town_dgbas_id'));
 $unique = array('1984' => array(), '2010' => array(), '2014' => array());
 $used = array('1984' => array(), '2010' => array(), '2014' => array());
 while ($rows = fgetcsv($input)) {
     $values = array_combine($columns, $rows);
+    foreach (array('TOWN_ID', 'COUNTY_ID', 'SEGIS_TOWN_ID') as $k) {
+        if ($values[$k][0] == '9') {
+            $values[$k] = '0' . $values[$k];
+        }
+    }
     fputcsv($fp, array(
         $values['TOWN_ID'],
         $values['COUNTY_ID'],
@@ -73,6 +86,18 @@ while ($rows = fgetcsv($input)) {
         $values['END_DATE'],
         $values['NOTE'],
     ));
+
+    foreach (explode("\n", $values['TOWN_NAME'] . "\n" . $values['TOWN_NAME_ALIAS']) as $n) {
+        if (!$n) {
+            continue;
+        }
+        $k = $values['COUNTY_ID'] . '-' . $n;
+        if (array_key_exists($k, $town_map) and $town_map[$k] != $values['TOWN_ID']) {
+            throw new Exception("duplicate {$k}");
+        }
+        $town_map[$k] = $values['TOWN_ID'];
+        fputcsv($fp_town_out, array($values['COUNTY_ID'], $n, $values['TOWN_ID']));
+    }
 
     foreach (array('1984', '2010', '2014') as $y) {
         if (!is_array($county_names[$y][$values['COUNTY_ID']])) {
@@ -112,15 +137,23 @@ foreach (array('1984', '2010', '2014') as $y) {
 }
 
 $input = fopen('village.csv', 'r');
+$fp_village_out = fopen('map-village.csv', 'w');
+fputcsv($fp_village_out, array('town_dgbas_id', 'name', 'village_dgbas_id'));
 $columns = fgetcsv($input);
 $unique = array('1984' => array(), '2010' => array(), '2014' => array());
 $used = array('1984' => array(), '2010' => array(), '2014' => array());
+$village_map = array();
 while ($rows = fgetcsv($input)) {
     $values = array_combine($columns, $rows);
+    foreach (array('VILLAGE_ID', 'COUNTY_ID', 'TOWN_ID', 'SEGIS_VILLAGE_ID') as $k) {
+        if ($values[$k][0] == '9') {
+            $values[$k] = '0' . $values[$k];
+        }
+    }
     fputcsv($fp, array(
         $values['VILLAGE_ID'],
-        intval($values['COUNTY_ID']),
-        intval($values['TOWN_ID']),
+        ($values['COUNTY_ID']),
+        ($values['TOWN_ID']),
         $values['SEGIS_VILLAGE_ID'],
         $values['VILLAGE_NAME'],
         (($town_names['2014'][$values['TOWN_ID']][0] ?: $town_names['2010'][$values['TOWN_ID']][0]) ?: $town_names['1984'][$values['TOWN_ID']][0]) . $values['VILLAGE_NAME'],
@@ -129,6 +162,19 @@ while ($rows = fgetcsv($input)) {
         $values['END_DATE'],
         $values['備註'],
     ));
+
+    foreach (explode("\n", $values['VILLAGE_NAME'] . "\n" . $values['VILLAGE_NAME_ALIAS']) as $n) {
+        if (!$n) {
+            continue;
+        }
+        $k = $values['TOWN_ID'] . '-' . $n;
+        if (array_key_exists($k, $village_map) and $village_map[$k] != $values['VILLAGE_ID']) {
+            throw new Exception("duplicate {$k}");
+        }
+        $village_map[$k] = $values['VILLAGE_ID'];
+        fputcsv($fp_village_out, array($values['TOWN_ID'], $n, $values['VILLAGE_ID']));
+
+    }
 
     foreach (array('1984', '2010', '2014') as $y) {
         if (!is_array($town_names[$y][$values['TOWN_ID']])) {
@@ -151,6 +197,7 @@ while ($rows = fgetcsv($input)) {
     }
 }
 
+
 include('SheetHubTool.php');
 $id = SheetHubTool::uploadToSheetHub('result.csv', 'csv');
 SheetHubTool::updateFile('area.reference.tw', '中華民國行政區', $id);
@@ -160,3 +207,7 @@ $id = SheetHubTool::uploadToSheetHub('result2010.csv', 'csv');
 SheetHubTool::updateFile('area.reference.tw', '中華民國行政區_map_名稱2010', $id);
 $id = SheetHubTool::uploadToSheetHub('result2014.csv', 'csv');
 SheetHubTool::updateFile('area.reference.tw', '中華民國行政區_map_名稱2014', $id);
+$id = SheetHubTool::uploadToSheetHub('map-village.csv', 'csv');
+SheetHubTool::updateFile('area.reference.tw', '中華民國行政區_map_村里名稱', $id);
+$id = SheetHubTool::uploadToSheetHub('map-town.csv', 'csv');
+SheetHubTool::updateFile('area.reference.tw', '中華民國行政區_map_鄉鎮市區名稱', $id);
