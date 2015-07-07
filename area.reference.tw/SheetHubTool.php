@@ -1,1 +1,1 @@
-../data.cwb.gov.tw/SheetHubTool.php
+../SheetHubTool.php
