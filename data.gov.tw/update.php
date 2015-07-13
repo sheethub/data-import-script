@@ -10,6 +10,7 @@ if ($argv = $_SERVER['argv'][1]) {
         if ($_SERVER['argv'][2]) {
             $config['meta_only'] = true;
         }
+        $config['force'] = true;
         $d->updateOrInsert(str_replace('/', '_', $portal_meta['title']), $config);
     } else {
         $d->updateOrInsert($argv, array());

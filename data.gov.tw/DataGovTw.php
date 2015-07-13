@@ -196,7 +196,7 @@ class DataGovTw
                 $sheet_info = SheetHubTool::getSheetHubInfo('data.gov.tw', $type)->sheet;
             }
             $config['period'] = array_key_exists('period', $config) ? $config['period'] : 86400;
-            if (time() - strtotime($sheet_info->meta->fetched_time) < $config['period']) {
+            if (!$config['force'] and time() - strtotime($sheet_info->meta->fetched_time) < $config['period']) {
                 return "距離上次更新時間過短";
             }
             error_log("updating {$type}");
@@ -270,8 +270,7 @@ class DataGovTw
 
             $file = stream_get_meta_data($fp)['uri'];
             $md5 = md5_file($file);
-            $fp = DataGovTw::specialCase($fp, $config['source']);
-            if ($sheet_info and $sheet_info->meta->file_hash and $md5 == $sheet_info->meta->file_hash) {
+            if (!$config['force'] and $sheet_info and $sheet_info->meta->file_hash and $md5 == $sheet_info->meta->file_hash) {
                 error_log("md5 same, skip {$type}");
                 SheetHubTool::setMeta('data.gov.tw', $type, array('fetched_time' => date('c', time())));
                 return "下載原始檔案 md5 未變，不需更新";
@@ -286,6 +285,7 @@ class DataGovTw
             if ($config['filetype']) {
                 $filetype = $config['filetype'];
             }
+            $fp = DataGovTw::specialCase($fp, $config['source']);
 
             try {
                 $upload_id = SheetHubTool::uploadToSheetHub($fp, $filetype);
