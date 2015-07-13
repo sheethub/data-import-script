@@ -396,6 +396,35 @@ class DataGovTw
             }
             return $output;
 
+        case 'http://data.gov.tw/node/7608': // 科技部補助兩岸科技交流統計資料集
+            rewind($fp);
+            fgetcsv($fp);  // 第一行資料更新時間
+            fgetcsv($fp);  // 第二行核定件數
+            fgetcsv($fp);
+            $sections = fgetcsv($fp); // 處室 (用的是合併儲存格)
+            array_shift($sections);
+            foreach ($sections as $i => $s) {
+                if (!$s) {
+                    $sections[$i] = $sections[$i - 1];
+                }
+            }
+
+            $orgs = fgetcsv($fp); // 機關類別
+            array_shift($orgs);
+
+            $output = tmpfile();
+            fputcsv($output, array('申請年度', '機關類別', '學術處室', '核定件數'));
+
+            while ($rows = fgetcsv($fp)) {
+                $year = array_shift($rows);
+                foreach ($rows as $id => $v) {
+                    fputcsv($output, array($year, $orgs[$id], $sections[$id], $v));
+                }
+            }
+
+            return $output;
+
+
 
 
         default:
