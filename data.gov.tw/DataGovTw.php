@@ -403,9 +403,11 @@ class DataGovTw
             return $output;
 
         case 'http://data.gov.tw/node/7608': // 科技部補助兩岸科技交流統計資料集
+        case 'http://data.gov.tw/node/7607': // 科技部補助延攬科技人才統計資料集
+        case 'http://data.gov.tw/node/7609': // 行政院傑出科技貢獻獎統計資料集
             rewind($fp);
             $rows = fgetcsv($fp);  // 第一行資料更新時間
-            if (strpos($rows[0], '資料更新日期') === false) {
+            if (strpos($rows[0], '料更新日期') === false) {
                 throw new Exception("預期第一行應該是資料更新日期，結果是 {$rows[0]}");
             }
             $rows = fgetcsv($fp);
@@ -413,7 +415,7 @@ class DataGovTw
                 throw new Exception("預期第二行為空白，結果有內容: " . implode('', $rows));
             }
             $rows = fgetcsv($fp);  // 第三行核定件數
-            if (strpos($rows[1], '核定件數') === false) {
+            if (!in_Array($rows[1], array('核定件數', '獲獎人數'))) {
                 throw new Exception("預期第三行應該是核定件數，結果是 {$rows[1]}");
             }
             $sections = fgetcsv($fp); // 處室 (用的是合併儲存格)
