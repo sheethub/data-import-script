@@ -267,8 +267,10 @@ class DataGovTw
                 $this->error($type, $e);
                 return "更新失敗，原因: " . $e->getMessage();
             }
+
             $file = stream_get_meta_data($fp)['uri'];
             $md5 = md5_file($file);
+            $fp = DataGovTw::specialCase($fp, $config['source']);
             if ($sheet_info and $sheet_info->meta->file_hash and $md5 == $sheet_info->meta->file_hash) {
                 error_log("md5 same, skip {$type}");
                 SheetHubTool::setMeta('data.gov.tw', $type, array('fetched_time' => date('c', time())));
@@ -341,6 +343,64 @@ class DataGovTw
         file_put_contents('error', $type . ": {$e->getMessage()}\n", FILE_APPEND);
         error_log("{$type}: {$e->getMessage()}");
         //throw $e;
+    }
+
+    public function specialCase($fp, $source)
+    {
+        switch ($source) {
+        case 'http://data.gov.tw/node/14239': // 結婚人數─按區域別國籍分
+            rewind($fp);
+            fgetcsv($fp);  // 先濾掉第一行標題 "結婚人數─按區域別及國籍別分"
+
+            $output = tmpfile();
+            fputcsv($output, array('統計期', '結婚人數', '區域別', '國籍別', '數量'));
+
+            $columns = fgetcsv($fp);
+            $terms = array();
+
+            array_shift($columns);
+            foreach ($columns as $col) {
+                $terms[] = array_map('trim', explode('/', $col));
+            }
+
+            while ($rows = fgetcsv($fp)) {
+                $time = array_shift($rows);
+                foreach ($rows as $id => $row) {
+                    $value = str_replace(',', '', $row);
+                    fputcsv($output, array_merge(array($time), $terms[$id], array($value)));
+                }
+            }
+            return $output;
+
+        case 'http://data.gov.tw/node/14240': // 結婚人數─按年齡婚前婚姻狀況分
+            rewind($fp);
+            fgetcsv($fp);  // 先濾掉第一行標題 "結婚人數─按區域別及國籍別分"
+
+            $output = tmpfile();
+            fputcsv($output, array('統計期', '結婚人數', '年齡別', '婚姻狀況', '數量'));
+
+            $columns = fgetcsv($fp);
+            $terms = array();
+
+            array_shift($columns);
+            foreach ($columns as $col) {
+                $terms[] = array_map('trim', explode('/', $col));
+            }
+
+            while ($rows = fgetcsv($fp)) {
+                $time = array_shift($rows);
+                foreach ($rows as $id => $row) {
+                    $value = str_replace(',', '', $row);
+                    fputcsv($output, array_merge(array($time), $terms[$id], array($value)));
+                }
+            }
+            return $output;
+
+
+
+        default:
+            return $fp;
+        }
     }
 
 }
