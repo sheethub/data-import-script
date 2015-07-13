@@ -275,6 +275,12 @@ class DataGovTw
                 return "下載原始檔案 md5 未變，不需更新";
             }
 
+            if (property_exists($sheet_info->meta, 'updater:columns')) {
+                $config['columns'] = explode(',', $sheet_info->meta->{'updater:columns'});
+            }
+            if (property_exists($sheet_info->meta, 'updater:row_begin')) {
+                $config['row_begin'] = $sheet_info->meta->{'updater:row_begin'};
+            }
             if ($config['filetype']) {
                 $filetype = $config['filetype'];
             }
