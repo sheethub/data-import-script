@@ -39,6 +39,8 @@ for ($i = 1; $i < $tr_doms->length; $i++) {
     }
     if (!$new_file) {
         $ret = SheetHubTool::updateFile('gist-map.motc.gov.tw', $title, $upload_id, array());
+        error_log("Type={$title} done, insert: " . count($ret->insert) . ', update: ' . count($ret->update) . ', delete: ' . count($ret->delete));
+
     }
     SheetHubTool::setDescription('gist-map.motc.gov.tw', $title, $description);
 

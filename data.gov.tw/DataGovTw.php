@@ -350,7 +350,10 @@ class DataGovTw
         switch ($source) {
         case 'http://data.gov.tw/node/14239': // 結婚人數─按區域別國籍分
             rewind($fp);
-            fgetcsv($fp);  // 先濾掉第一行標題 "結婚人數─按區域別及國籍別分"
+            $rows = fgetcsv($fp);  // 先濾掉第一行標題 "結婚人數─按區域別及國籍別分"
+            if ($rows[1] != '結婚人數─按區域別及國籍別分') {
+                throw new Exception("預期第一行應該是 '結婚人數─按區域別及國籍別分'");
+            }
 
             $output = tmpfile();
             fputcsv($output, array('統計期', '結婚人數', '區域別', '國籍別', '數量'));
@@ -374,7 +377,10 @@ class DataGovTw
 
         case 'http://data.gov.tw/node/14240': // 結婚人數─按年齡婚前婚姻狀況分
             rewind($fp);
-            fgetcsv($fp);  // 先濾掉第一行標題 "結婚人數─按區域別及國籍別分"
+            $rows = fgetcsv($fp);  // 先濾掉第一行標題 "結婚人數─按年齡婚前婚姻狀況分"
+            if ($rows[1] != '結婚人數─按年齡、婚前婚姻狀況分') {
+                throw new Exception("預期第一行應該是 '結婚人數─按年齡、婚前婚姻狀況分', 結果是 '{$rows[1]}'");
+            }
 
             $output = tmpfile();
             fputcsv($output, array('統計期', '結婚人數', '年齡別', '婚姻狀況', '數量'));
@@ -398,9 +404,18 @@ class DataGovTw
 
         case 'http://data.gov.tw/node/7608': // 科技部補助兩岸科技交流統計資料集
             rewind($fp);
-            fgetcsv($fp);  // 第一行資料更新時間
-            fgetcsv($fp);  // 第二行核定件數
-            fgetcsv($fp);
+            $rows = fgetcsv($fp);  // 第一行資料更新時間
+            if (strpos($rows[0], '資料更新日期') === false) {
+                throw new Exception("預期第一行應該是資料更新日期，結果是 {$rows[0]}");
+            }
+            $rows = fgetcsv($fp);
+            if (count(array_filter('strlen', $rows))) {
+                throw new Exception("預期第二行為空白，結果有內容: " . implode('', $rows));
+            }
+            $rows = fgetcsv($fp);  // 第三行核定件數
+            if (strpos($rows[1], '核定件數') === false) {
+                throw new Exception("預期第三行應該是核定件數，結果是 {$rows[1]}");
+            }
             $sections = fgetcsv($fp); // 處室 (用的是合併儲存格)
             array_shift($sections);
             foreach ($sections as $i => $s) {
