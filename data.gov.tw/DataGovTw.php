@@ -65,108 +65,6 @@ class DataGovTw
         return $ret;
     }
 
-    public function downloadFile($url, $filetype)
-    {
-        // http://elearning.treif.org.tw/know/html_edition/book_1/csv/台灣地區活動斷層.csv
-        $url = preg_replace_callback('#[^a-zA-Z./:_?&;=%]+#', function($m) { return rawurlencode($m[0]); }, $url);
-        error_log("[$filetype]$url");
-        $curl = curl_init($url);
-        $fp = tmpfile();
-        curl_setopt($curl, CURLOPT_FILE, $fp);
-        curl_setopt($curl, CURLOPT_NOPROGRESS, false);
-        curl_setopt($curl, CURLOPT_USERAGENT, 'Chrome');
-        curl_setopt($curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-        $vars = array('prev_time' => 0, 'prev_size' => -1);
-        curl_setopt($curl, CURLOPT_PROGRESSFUNCTION, function($curl, $download_size, $downloaded, $upload_size, $uploaded) use (&$vars) {
-            if ($vars['prev_time'] == 0 and $download_size > 10 * 1024 * 1024) {
-                throw new Exception("$url is large than 10MB");
-            }
-            if ($download_size != $vars['prev_size']) {
-                $vars['prev_size'] = $download_size;
-                $vars['prev_time'] = time();
-            } else {
-                if (time() - $vars['prev_time'] > 10) {
-                    return -1;
-                    throw new Exception("超過 10 秒沒下載反應");
-                }
-            }
-        });
-        curl_setopt($curl, CURLOPT_CAINFO, __DIR__ . '/GCA.crt');
-        curl_exec($curl);
-        $info = curl_getinfo($curl);
-        curl_close($curl);
-
-        $header = file_get_contents(stream_get_meta_data($fp)['uri'], false, null, 0, 8192);
-        if (strpos($header, '<Treifopendata xmlns="http://www.treif.org.tw/">') !== false) {
-            if (preg_match('#<file1>(.*)\.([^.]*)</file1>#', $header, $matches)) {
-                $url = $matches[1] . '.' . $matches[2];
-                $type = strtolower($matches[2]);
-                return self::downloadFile($url, $type);
-            }
-        }
-
-        if (strpos($url, 'http://statis.moi.gov.tw/micst/stmain.jsp') === 0) {
-            if (preg_match('#onload="JavaScript:linkurl\(\'([^\']*)\',0\)#', $header, $matches)) {
-                return self::downloadFile('http://statis.moi.gov.tw/micst/' . $matches[1], 'csv');
-            }
-        }
-
-
-        // wget http://gca.nat.gov.tw/repository/Certs/GCA.cer
-        // openssl x509 -inform der -in GCA.cer -out GCA.crt
-        if ($info['http_code'] != 200) {
-            if (in_array($info['http_code'], array(302, 301))) {
-                if (!$info['redirect_url']) {
-                    var_dump($info);
-                    throw new Exception("找不到 redirect_url");
-                }
-                return self::downloadFile($info['redirect_url'], $filetype);
-            }
-            print_r($info);
-            throw new Exception("download {$url} failed: code={$info['http_code']}");
-        }
-
-        //   ["content_type"]=>
-        //     string(24) "application/vnd.ms-excel"
-        //
-        switch (strtolower(explode(';', $info['content_type'])[0])) {
-        case 'application/json':
-            $filetype = 'json';
-            break;
-        case 'application/vnd.ms-excel':
-            $filetype = 'xls';
-            break;
-        case 'text/csv':
-            $filetype = 'csv';
-            break;
-        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-            $filetype = 'xlsx';
-            break;
-        case 'text/xml':
-            $filetype = 'xml';
-            break;
-        case 'application/zip':
-        case 'application/x-zip-compressed':
-            $filetype = 'zip';
-            break;
-        case 'text/html':
-            if ($filetype == 'json' and in_array($header[0], array('[', '{'))) {
-                break;
-            }
-            echo $header;
-            throw new Exception("{$info['content_type']} 不給用的 {$url} (filetype={$filetype})");
-        case 'application/pdf':
-        case 'application/msword':
-            if ($filetype == 'json') {
-                break;
-            }
-            throw new Exception("{$info['content_type']} 不給用的 {$url} (filetype={$filetype})");
-        default:
-            error_log("unknown {$info['content_type']}, use {$filetype}");
-        }
-        return array($fp, $filetype);
-    }
-
     public function updateStatus($type, $time, $status)
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
@@ -261,7 +159,7 @@ class DataGovTw
 
             try {
                 error_log("downloading {$download_url}");
-                list($fp, $filetype) = $this->downloadFile($download_url, $filetype);
+                list($fp, $filetype) = SheetHubTool::downloadFile($download_url, $filetype);
                 error_log("downloaded");
             }catch (Exception $e) {
                 $this->error($type, $e);
