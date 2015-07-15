@@ -48,6 +48,7 @@ class SheetHubTool
         if (!$upload_id = json_decode($content)->data->upload_id) {
             throw new Exception('upload failed:' . $content);
         }
+        error_log("upload to sheethub done: upload_id = {$upload_id}");
         return $upload_id;
     }
 
@@ -61,14 +62,23 @@ class SheetHubTool
         curl_setopt($curl, CURLOPT_FILE, $fp);
         curl_setopt($curl, CURLOPT_NOPROGRESS, false);
         curl_setopt($curl, CURLOPT_USERAGENT, 'Chrome');
+        curl_setopt($curl, CURLOPT_HEADERFUNCTION, function($curl, $header) use (&$filetype) {
+            if (preg_match('#Content-Disposition: attachment; filename="[^"]*\.([^".]*)"#', $header, $matches)) {
+                $t = strtolower($matches[1]);
+                if (in_array($t, array('csv', 'zip'))) {
+                    $filetype = $t;
+                }
+            }
+            return strlen($header);
+        });
         curl_setopt($curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
         $vars = array('prev_time' => 0, 'prev_size' => -1);
         curl_setopt($curl, CURLOPT_PROGRESSFUNCTION, function($curl, $download_size, $downloaded, $upload_size, $uploaded) use (&$vars) {
             if ($vars['prev_time'] == 0 and $download_size > 10 * 1024 * 1024) {
                 throw new Exception("$url is large than 10MB");
             }
-            if ($download_size != $vars['prev_size']) {
-                $vars['prev_size'] = $download_size;
+            if ($downloaded != $vars['prev_size']) {
+                $vars['prev_size'] = $downloaded;
                 $vars['prev_time'] = time();
             } else {
                 if (time() - $vars['prev_time'] > 10) {
