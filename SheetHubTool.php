@@ -28,6 +28,7 @@ class SheetHubTool
         $map = array(
             'csv' => array('text/csv', 'data.csv'),
             'zip' => array('text/zip', 'data.zip'),
+            'rar' => array('text/rar', 'data.rar'),
             'xml' => array('text/xml', 'data.xml'),
             'json' => array('text/json', 'data.json'),
             'xls' => array('text/xls', 'data.xls'),
