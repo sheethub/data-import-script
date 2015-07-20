@@ -225,32 +225,44 @@ class SheetHubTool
 
         $info = self::getFileInfoFromUpload($upload_id);
 
-        $tab_id = null;
-        foreach ($info->tab_ids as $id => $tab) {
-            if (!$info->rows[$id]) {
-                continue;
+        if (property_exists('tab_id', $config)) {
+            $tab_id = $config['tab_id'];
+        } else {
+            $tab_id = null;
+            foreach ($info->tab_ids as $id => $tab) {
+                if (!$info->rows[$id]) {
+                    continue;
+                }
+                if (!is_null($tab_id)) {
+                    throw new Exception("超過一個檔案或 tab 可選: " . implode(",", $info->tab_ids));
+                }
+                $tab_id = $tab;
             }
-            if (!is_null($tab_id)) {
-                throw new Exception("超過一個檔案或 tab 可選: " . implode(",", $info->tab_ids));
+
+            if (is_null($tab_id)) {
+                throw new Exception("沒有 tab 可選: " . implode(",", $info->tab_ids));
             }
-            $tab_id = $tab;
+            $tab_id = array($tab_id);
         }
 
-        if (is_null($tab_id)) {
-            throw new Exception("沒有 tab 可選: " . implode(",", $info->tab_ids));
+        if (array_key_exists('row_begin', $config)) {
+            $row_begin = $config['row_begin'];
+        } else {
+            $row_begin = self::guessRowBegin($info->tables[0]);
         }
 
-        $row_begin = array_key_exists('row_begin', $config) ? $config['row_begin'] : self::guessRowBegin($info->tables[0]);
-        $columns = ($info->tables[0][max(0, $row_begin - 1)]);
-        if ($config['columns'] and count($config['columns']) == count($columns)) {
+        if (array_key_exists('columns', $config)) {
             $columns = $config['columns'];
+        } else {
+            $columns = ($info->tables[0][max(0, $row_begin - 1)]);
         }
+
         $columns = array_map(function($s) {return str_replace("\n", "", $s); }, $columns);
         $params = array();
         $params[] = 'sheetuser=' . urlencode($user);
         $params[] = 'sheetname=' . urlencode($sheet);
         $params[] = 'upload_id=' . urlencode($upload_id);
-        $params[] = 'tab-select=' . urlencode($tab_id);
+        $params[] = 'tab-select=' . urlencode(json_encode($tab_id));
         $params[] = 'row_begin=' . intval($row_begin);
         $params[] = 'cols=' . urlencode(json_encode($columns));
         if ($config['encode']) {
