@@ -266,6 +266,7 @@ class SheetHubTool
         $params[] = 'tab-select=' . urlencode(json_encode($tab_id));
         $params[] = 'row_begin=' . intval($row_begin);
         $params[] = 'cols=' . urlencode(json_encode($columns));
+        $params[] = 'clean_uploaded_file=1';
         if ($config['encode']) {
             $params[] = 'encode=' . urlencode($config['encode']);
         }
@@ -333,6 +334,8 @@ class SheetHubTool
         $params[] = 'tab-select=' . urlencode($tab_id);
         $params[] = 'row_begin=' . intval($row_begin);
         $params[] = 'update_type=' . array_key_exists('update_type', $config) ? $config['update_type'] : 0;
+        $params[] = 'clean_uploaded_file=1';
+
         $params[] = 'cols=' . urlencode(json_encode($columns));
         if ($config['encode']) {
             $params[] = 'encode=' . urlencode($config['encode']);
