@@ -7,6 +7,9 @@ $jobs = array(
     'data.cwb.gov.tw' => array(
         'script' => 'data.cwb.gov.tw/update.php',
     ),
+    'ronnywang' => array(
+        'script' => 'ronnywang/update.php',
+    ),
 );
 
 putenv('SCRIPT_TIMEOUT=120');
