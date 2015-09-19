@@ -7,6 +7,18 @@ $list = array(
     '土壤圖' => array('period' => 30 * 86400),
     '山坡地範圍' => array('period' => 30 * 86400),
     '土石流潛勢溪流影響範圍圖層' => array('period' => 30 * 86400),
+    '雨量站基本資料' => array('period' => 86400),
+    '觀測站基本資料' => array('period' => 86400),
+    '土石流紅黃警戒' => array('period' => 3600),
+    '避難處所' => array('period' => 3600),
+    '即時雨量' => array('period' => 600),
+    '土石流警戒雨量' => array('period' => 3600),
+    '醫療處所' => array('period' => 3600),
+    '災例最速報' => array('period' => 3600),
+    '觀測站影像資料' => array('period' => 3600),
+    '災情查報單資料' => array('period' => 3600),
+    '應變小組開設資料' => array('period' => 3600),
+    '歷年土砂災害照片資料' => array('period' => 3600),
 );
 
 foreach ($list as $type => $config) {
