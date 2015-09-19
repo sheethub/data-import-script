@@ -59,6 +59,9 @@ class SheetHubTool
         $url = preg_replace_callback('#[^a-zA-Z./:_?&;=%]+#', function($m) { return rawurlencode($m[0]); }, $url);
         error_log("[$filetype]$url");
         $curl = curl_init($url);
+        if (!$filetype and preg_match('#\.([a-z0-9]*)$#', $url, $matches)) {
+            $filetype = $matches[1];
+        }
         $fp = tmpfile();
         curl_setopt($curl, CURLOPT_FILE, $fp);
         curl_setopt($curl, CURLOPT_NOPROGRESS, false);
@@ -66,7 +69,7 @@ class SheetHubTool
         curl_setopt($curl, CURLOPT_HEADERFUNCTION, function($curl, $header) use (&$filetype) {
             if (preg_match('#Content-Disposition: attachment; filename="[^"]*\.([^".]*)"#', $header, $matches)) {
                 $t = strtolower($matches[1]);
-                if (in_array($t, array('csv', 'zip'))) {
+                if (in_array($t, array('csv', 'zip', 'rar'))) {
                     $filetype = $t;
                 }
             }
@@ -224,7 +227,7 @@ class SheetHubTool
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
         $sheethub_key = getenv('SHEETHUB_KEY');
 
-        $info = self::getFileInfoFromUpload($upload_id);
+        $info = self::getFileInfoFromUpload($upload_id, $config['encode']);
 
         if (property_exists('tab_id', $config)) {
             $tab_id = $config['tab_id'];
@@ -269,6 +272,9 @@ class SheetHubTool
         $params[] = 'clean_uploaded_file=1';
         if ($config['encode']) {
             $params[] = 'encode=' . urlencode($config['encode']);
+        }
+        if (array_key_Exists('srs', $config)) {
+            $params[] = 'srs=' . urlencode($config['srs']);
         }
         $curl = curl_init("https://{$sheethub_domain}/file/addsheetfromuploaded?access_token={$sheethub_key}");
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -316,15 +322,24 @@ class SheetHubTool
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
         $sheethub_key = getenv('SHEETHUB_KEY');
 
-        $info = self::getFileInfoFromUpload($upload_id);
+        $info = self::getFileInfoFromUpload($upload_id, $config['encode']);
 
-        if (count($info->tab_ids) != 1) {
-            throw new Exception("超過一個檔案或 tab 可選");
+        if (array_key_exists('tab_id', $config)) {
+            $tab_id = $config['tab_id'];
+            $tab_no = array_search($tab_id, $info->tab_ids);
+            if (false === $tab_no) {
+                throw new Exception("找不到 {$tab_id} 這個 tab");
+            }
+        } else {
+            if (count($info->tab_ids) != 1) {
+                throw new Exception("超過一個檔案或 tab 可選");
+            }
+            $tab_id = $info->tab_ids[0];
+            $tab_no = 0;
         }
-        $tab_id = $info->tab_ids[0];
 
         $row_begin = array_key_exists('row_begin', $config) ? $config['row_begin'] : self::guessRowBegin($info->tables[0]);
-        $columns = ($info->tables[0][max(0, $row_begin - 1)]);
+        $columns = ($info->tables[$tab_no][max(0, $row_begin - 1)]);
         if ($config['columns'] and count($config['columns']) == count($columns)) {
             $columns = $config['columns'];
         }
@@ -340,6 +355,9 @@ class SheetHubTool
         if ($config['encode']) {
             $params[] = 'encode=' . urlencode($config['encode']);
         }
+        if (array_key_Exists('srs', $config)) {
+            $params[] = 'srs=' . urlencode($config['srs']);
+        }
         $user = urlencode($user);
         $sheet = urlencode($sheet);
         $curl = curl_init("https://{$sheethub_domain}/{$user}/{$sheet}/updatefile?access_token={$sheethub_key}");
@@ -348,7 +366,7 @@ class SheetHubTool
         $content = curl_exec($curl);
         $ret = json_decode($content);
         if ($ret->error){
-            error_log('table=' . json_encode($info->tables[0], JSON_UNESCAPED_UNICODE));
+            error_log('table=' . json_encode($info->tables[$tab_no], JSON_UNESCAPED_UNICODE));
             error_log('column=' . json_encode($columns, JSON_UNESCAPED_UNICODE));
             throw new Exception($ret->message);
         }
