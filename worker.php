@@ -10,6 +10,10 @@ $jobs = array(
     'ronnywang' => array(
         'script' => 'ronnywang/update.php',
     ),
+
+    '246.swcb.gov.tw' => array(
+        'script' => '246.swcb.gov.tw/update.php',
+    ),
 );
 
 putenv('SCRIPT_TIMEOUT=120');
