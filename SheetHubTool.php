@@ -115,7 +115,7 @@ class SheetHubTool
         // wget http://gca.nat.gov.tw/repository/Certs/GCA.cer
         // openssl x509 -inform der -in GCA.cer -out GCA.crt
         if ($info['http_code'] != 200) {
-            if (in_array($info['http_code'], array(302, 301))) {
+            if (in_array($info['http_code'], array(303, 302, 301))) {
                 if (!$info['redirect_url']) {
                     var_dump($info);
                     throw new Exception("找不到 redirect_url");
