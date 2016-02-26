@@ -45,7 +45,7 @@ class DataGovTw
                 continue;
             }
 
-            if ($name == '下載') {
+            if ($name == '資料資源') {
                 $ret[$name] = array();
                 foreach ($value_dom->getElementsByTagName('a') as $a_dom) {
                     if (in_array(strtolower($a_dom->nodeValue), array('doc', 'word', 'pdf', 'webservice'))) {
@@ -53,7 +53,7 @@ class DataGovTw
                     }
                     $ret[$name][] = array(
                         'type' => strtolower($a_dom->nodeValue),
-                        'url' => $a_dom->getAttribute('href'),
+                        'url' => 'http://data.gov.tw' . $a_dom->getAttribute('href'),
                     );
                 }
             } elseif ($name == '資料集評分') {
@@ -120,12 +120,12 @@ class DataGovTw
         if (!$config['meta_only']) {
             $files = array();
             $download_url = null;
-            if (count($portal_meta['下載']) == 1) {
-                $download_url = $portal_meta['下載'][0]['url'];
-                $filetype = $portal_meta['下載'][0]['type'];
+            if (count($portal_meta['資料資源']) == 1) {
+                $download_url = $portal_meta['資料資源'][0]['url'];
+                $filetype = $portal_meta['資料資源'][0]['type'];
             }
             if (is_null($download_url) and $config['choose_file']) {
-                foreach ($portal_meta['下載'] as $info) {
+                foreach ($portal_meta['資料資源'] as $info) {
                     if ($info['type'] == $config['choose_file']) {
                         $download_url = $info['url'];
                         $filetype = $info['type'];
@@ -136,7 +136,7 @@ class DataGovTw
 
             if (is_null($download_url)) {
                 $files = array();
-                foreach ($portal_meta['下載'] as $info) {
+                foreach ($portal_meta['資料資源'] as $info) {
                     $files[$info['type']] = $info['url'];
                 }
                 foreach (array('json', 'csv', 'excel', 'xml') as $t) { 
@@ -150,7 +150,7 @@ class DataGovTw
 
             if (is_null($download_url)) {
                 try {
-                    throw new Exception("超過一個檔可以下載，不知道要用哪個: " . implode(',', array_map(function($i) {return $i['type']; }, $portal_meta['下載'])));
+                    throw new Exception("超過一個檔可以下載，不知道要用哪個: " . implode(',', array_map(function($i) {return $i['type']; }, $portal_meta['資料資源'])));
                 } catch (Exception $e) {
                     $this->error($type, $e);
                     return "更新失敗，原因: " . $e->getMessage();
