@@ -1,8 +1,8 @@
 <?php
 
-// curl 'https://sheethub.com/ronnywang/中華民國鄉鎮市區?format=csv' > town.csv
-// curl 'https://sheethub.com/ronnywang/中華民國村里?format=csv' > village.csv
-// curl 'https://sheethub.com/ronnywang/中華民國縣市?format=csv' > county.csv
+system("curl 'https://sheethub.com/ronnywang/中華民國鄉鎮市區?format=csv' > town.csv");
+system("curl 'https://sheethub.com/ronnywang/中華民國村里?format=csv' > village.csv");
+system("curl 'https://sheethub.com/ronnywang/中華民國縣市?format=csv' > county.csv");
 
 $fp = fopen('result.csv', 'w');
 $fp_1984 = fopen('result1984.csv', 'w');
@@ -74,13 +74,23 @@ while ($rows = fgetcsv($input)) {
             $values[$k] = '0' . $values[$k];
         }
     }
+    $county_name = null;
+    foreach (array(2014, 2010, 1984) as $y) {
+        if (array_key_exists($values['COUNTY_ID'], $county_names[$y])) {
+            $county_name = $county_names[$y][$values['COUNTY_ID']][0];
+            break;
+        }
+    }
+    if (is_null($county_name)) {
+        throw new Exception("找不到 {$values['COUNTY_ID']}");
+    }
     fputcsv($fp, array(
         $values['TOWN_ID'],
         $values['COUNTY_ID'],
         $values['TOWN_ID'],
         $values['SEGIS_TOWN_ID'],
         $values['TOWN_NAME'],
-        (($county_names['2014'][$values['COUNTY_ID']][0] ?: $county_names['2010'][$values['COUNTY_ID']][0]) ?: $county_names['1984'][$values['COUNTY_ID']][0]) . $values['TOWN_NAME'],
+        $county_name . $values['TOWN_NAME'],
         'town',
         $values['START_DATE'],
         $values['END_DATE'],
@@ -100,7 +110,7 @@ while ($rows = fgetcsv($input)) {
     }
 
     foreach (array('1984', '2010', '2014') as $y) {
-        if (!is_array($county_names[$y][$values['COUNTY_ID']])) {
+        if (!array_key_exists($values['COUNTY_ID'], $county_names[$y]) or !is_array($county_names[$y][$values['COUNTY_ID']])) {
             continue;
         }
         foreach ($county_names[$y][$values['COUNTY_ID']] as $c_name) {
@@ -131,7 +141,7 @@ foreach (array('1984', '2010', '2014') as $y) {
     foreach ($unique[$y] as $n => $id) {
         if ($id) {
             fputcsv(${'fp_' . $y}, array($n, $id));
-            $town_names[$y][$values['TOWN_ID']][] = $n;
+            $town_names[$y][$id][] = $n;
         }
     }
 }
@@ -150,13 +160,23 @@ while ($rows = fgetcsv($input)) {
             $values[$k] = '0' . $values[$k];
         }
     }
+    $town_name = null;
+    foreach (array(2014, 2010, 1984) as $y) {
+        if (array_key_exists($values['TOWN_ID'], $town_names[$y])) {
+            $town_name = $town_names[$y][$values['TOWN_ID']][0];
+            break;
+        }
+    }
+    if (is_null($town_name)) {
+        throw new Exception("找不到 {$values['TOWN_ID']} 名稱");
+    }
     fputcsv($fp, array(
         $values['VILLAGE_ID'],
         ($values['COUNTY_ID']),
         ($values['TOWN_ID']),
         $values['SEGIS_VILLAGE_ID'],
         $values['VILLAGE_NAME'],
-        (($town_names['2014'][$values['TOWN_ID']][0] ?: $town_names['2010'][$values['TOWN_ID']][0]) ?: $town_names['1984'][$values['TOWN_ID']][0]) . $values['VILLAGE_NAME'],
+        $town_name . $values['VILLAGE_NAME'],
         'village',
         $values['START_DATE'],
         $values['END_DATE'],
@@ -177,7 +197,7 @@ while ($rows = fgetcsv($input)) {
     }
 
     foreach (array('1984', '2010', '2014') as $y) {
-        if (!is_array($town_names[$y][$values['TOWN_ID']])) {
+        if (!array_key_exists($values['TOWN_ID'], $town_names[$y]) or !is_array($town_names[$y][$values['TOWN_ID']])) {
             continue;
         }
         foreach ($town_names[$y][$values['TOWN_ID']] as $t_name) {
@@ -196,7 +216,6 @@ while ($rows = fgetcsv($input)) {
         }
     }
 }
-
 
 include('SheetHubTool.php');
 $id = SheetHubTool::uploadToSheetHub('result.csv', 'csv');
