@@ -179,6 +179,9 @@ class SheetHubTool
     {
         $sheethub_domain = getenv('SHEETHUB_DOMAIN') ?: 'sheethub.com';
         $sheethub_key = getenv('SHEETHUB_KEY');
+        if (!$encode) {
+            $encode = 'auto';
+        }
 
         $curl = curl_init("https://{$sheethub_domain}/file/getuploadedinfo?upload_id={$upload_id}&access_token={$sheethub_key}&encode={$encode}");
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
