@@ -32,6 +32,7 @@ class SheetHubTool
             'xml' => array('text/xml', 'data.xml'),
             'json' => array('text/json', 'data.json'),
             'xls' => array('text/xls', 'data.xls'),
+            'ods' => array('text/ods', 'data.ods'),
             'xlsx' => array('text/xlsx', 'data.xlsx'),
         );
 
