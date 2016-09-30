@@ -51,6 +51,9 @@ class DataGovTw
                     if (in_array(strtolower($a_dom->nodeValue), array('doc', 'word', 'pdf', 'webservice'))) {
                         continue;
                     }
+                    if ($a_dom->nodeValue == '檢視資料' or trim($a_dom->nodeValue) == '') {
+                        continue;
+                    }
                     $ret[$name][] = array(
                         'type' => strtolower($a_dom->nodeValue),
                         'url' => 'http://data.gov.tw' . $a_dom->getAttribute('href'),
@@ -87,6 +90,13 @@ class DataGovTw
 
     public function updateOrInsert($type, $config)
     {
+        if (!array_key_exists('force', $config)) {
+            $config['force'] = false;
+        }
+        if (!array_key_exists('source', $config)) {
+            $config['source'] = false;
+        }
+
         try {
             if ($config['sheet_info']) {
                 $sheet_info = $config['sheet_info'];
